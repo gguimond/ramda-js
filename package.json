@@ -1,0 +1,16 @@
+{
+  "name": "ramda-js",
+  "eslintConfig": {
+    "plugins": [
+      "fp"
+    ],
+    "extends": "plugin:fp/recommended"
+  },
+  "devDependencies": {
+    "eslint": "^5.1.0",
+    "eslint-plugin-fp": "^2.3.0"
+  },
+  "dependencies": {
+    "ramda": "^0.25.0"
+  }
+}
