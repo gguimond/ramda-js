@@ -10,29 +10,77 @@ function Tournament(){
                         [R.T, R.always(res)]
                     ])(res);
                 const curriedInit = R.curry(init);
+
+                const addPoints = (key, nbPoints, team, acc) => {
+                    const teamStruct = R.prop(team, acc);
+                    return R.assoc(team, R.assoc(key, R.add(nbPoints, R.prop(key, teamStruct)), teamStruct), acc);
+                }
+                const curriedAddPoints = R.curry(addPoints);
+                const addWin = curriedAddPoints('w', 1);
+                const addLose = curriedAddPoints('l', 1);
+                const addDraw = curriedAddPoints('d', 1);
+                const addPlayed = curriedAddPoints('mp', 1);
+                const addP = curriedAddPoints('p');
+
+                const win = (team1, team2) =>
+                    R.pipe(
+                        addWin(team1),
+                        addLose(team2),
+                        addP(3, team1)
+                    );
+
+                const draw = (team1, team2) =>
+                    R.pipe(
+                        addDraw(team1),
+                        addDraw(team2),
+                        addP(1, team1),
+                        addP(1, team2)
+                    );
+
+                const team1 = R.view(R.lensIndex(0), value);
+                const team2 = R.view(R.lensIndex(1), value);
+
                 return R.pipe(
-                    curriedInit(R.view(R.lensIndex(0), value)),
-                    curriedInit(R.view(R.lensIndex(1), value))
+                    curriedInit(team1),
+                    curriedInit(team2),
+                    R.cond([
+                        [R.equals('win'), () => win(team1, team2)],
+                        [R.equals('loss'), () => win(team2, team1)],
+                        [R.equals('draw'), () => draw(team1, team2)],
+                        [R.T, R.identity]
+                    ])(R.view(R.lensIndex(2), value)),
+                    addPlayed(team1),
+                    addPlayed(team2)
                 )(res);
             };
             const curriedExtractData = R.curry(extractData);
 
-            return R.reduce((acc, value) => {             
-                const result = R.pipe(
-                    R.match(/^\w+\s\w+;\w+\s\w+;(loss|win|draw)$/g),
-                    R.ifElse(
-                      R.equals([]),
-                      R.always(acc),
-                      R.pipe(
-                        R.view(R.lensIndex(0)),
-                        R.split(';'),
-                        R.map(R.trim),
-                        curriedExtractData(acc)
+            return R.pipe(
+                R.reduce((acc, value) => {             
+                    const result = R.pipe(
+                        R.match(/^\w+\s\w+;\w+\s\w+;(loss|win|draw)$/g),
+                        R.ifElse(
+                          R.equals([]),
+                          R.always(acc),
+                          R.pipe(
+                            R.view(R.lensIndex(0)),
+                            R.split(';'),
+                            R.map(R.trim),
+                            curriedExtractData(acc)
+                            )
                         )
-                    )
-                );
-                return result(value);
-            }, {}, list);
+                    );
+                    return result(value);
+                }, {}),
+                R.toPairs,
+                R.sortWith([
+                    R.descend(R.pipe(R.nth(1), R.prop('p'))),
+                    R.ascend(R.nth(0))
+                ]),
+                R.reduce((acc, value) => 
+                    R.assoc(R.nth(0, value), R.nth(1, value), acc)
+                , {}),
+            )(list);
         }
     };
 }
