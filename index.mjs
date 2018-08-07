@@ -55,6 +55,41 @@ function Tournament(){
             };
             const curriedExtractData = R.curry(extractData);
 
+            const format = (body) => {
+                return R.pipe(
+                    R.concat(body),
+                    R.concat("\n"),
+                    R.concat("| MP |  W |  D |  L |  P"),
+                    R.concat(R.slice(0,31, R.concat("Team", "                                          ")))
+                )("");
+            };
+
+            const formatBody = 
+                R.reduce( (acc, value) => {
+                    const name = R.nth(0, value);
+                    const data = R.nth(1, value);
+                    return R.concat(
+                        R.concat(acc, "\n"),
+                        R.pipe(
+                            R.always(["mp", "w", "d", "l", "p"]),
+                            R.reduce((acc, value) => {
+                                return R.concat(
+                                    acc,
+                                    R.concat(
+                                        R.pipe(
+                                            R.prop(value),
+                                            R.toString(),
+                                            R.concat("|  "),
+                                        )(data),
+                                        " "
+                                    )
+                                )
+                            }, ""),
+                            R.concat(R.slice(0,31, R.concat(name, "                   ")))
+                        )(data)
+                    );
+                }, "");
+
             return R.pipe(
                 R.reduce((acc, value) => {             
                     const result = R.pipe(
@@ -77,9 +112,11 @@ function Tournament(){
                     R.descend(R.pipe(R.nth(1), R.prop('p'))),
                     R.ascend(R.nth(0))
                 ]),
-                R.reduce((acc, value) => 
+                /*R.reduce((acc, value) => 
                     R.assoc(R.nth(0, value), R.nth(1, value), acc)
-                , {}),
+                , {}),*/
+                formatBody,
+                format
             )(list);
         }
     };
