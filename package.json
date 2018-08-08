@@ -12,5 +12,6 @@
   },
   "dependencies": {
     "ramda": "^0.25.0"
-  }
+  },
+  "scripts": {"start": "node --experimental-modules index.mjs"}
 }

@@ -90,9 +90,8 @@ function Tournament(){
                     );
                 }, "");
 
-            return R.pipe(
-                R.reduce((acc, value) => {             
-                    const result = R.pipe(
+            const compute = R.reduce((acc, value) => {             
+                    return R.pipe(
                         R.match(/^\w+\s\w+;\w+\s\w+;(loss|win|draw)$/g),
                         R.ifElse(
                           R.equals([]),
@@ -104,17 +103,20 @@ function Tournament(){
                             curriedExtractData(acc)
                             )
                         )
-                    );
-                    return result(value);
-                }, {}),
+                    )(value);
+                }, {});
+
+            const sort = R.pipe(
                 R.toPairs,
                 R.sortWith([
                     R.descend(R.pipe(R.nth(1), R.prop('p'))),
                     R.ascend(R.nth(0))
-                ]),
-                /*R.reduce((acc, value) => 
-                    R.assoc(R.nth(0, value), R.nth(1, value), acc)
-                , {}),*/
+                ])
+            );
+
+            return R.pipe(
+                compute,
+                sort,
                 formatBody,
                 format
             )(list);
